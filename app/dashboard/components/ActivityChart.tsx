@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 import { Footprints, Flame, Clock } from "lucide-react";
-import { last7DaysActivity, healthSummary } from "@/lib/mockData";
+import { useData } from "@/lib/dataContext";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -30,35 +30,19 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const stats = [
-  {
-    label: "Орташа қадам",
-    value: healthSummary.avgSteps.toLocaleString(),
-    unit: "қадам",
-    icon: Footprints,
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-  },
-  {
-    label: "Калория",
-    value: healthSummary.avgCalories.toLocaleString(),
-    unit: "ккал",
-    icon: Flame,
-    color: "text-orange-400",
-    bg: "bg-orange-500/10",
-  },
-  {
-    label: "Белсенді уақыт",
-    value: "48",
-    unit: "мин",
-    icon: Clock,
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-  },
-];
-
 export default function ActivityChart() {
+  const { mergedActivity, latestStats, userData } = useData();
   const goal = 10000;
+  const last7 = mergedActivity.slice(-7);
+  const hasUserData = userData.activity.length > 0;
+
+  const avgSteps = Math.round(last7.reduce((s, d) => s + d.steps, 0) / last7.length);
+
+  const stats = [
+    { label: "Орташа қадам", value: avgSteps.toLocaleString(), unit: "қадам", icon: Footprints, color: "text-blue-400", bg: "bg-blue-500/10" },
+    { label: "Калория", value: latestStats.bpm > 0 ? Math.round(latestStats.steps * 0.04 + 1400).toLocaleString() : "2,180", unit: "ккал", icon: Flame, color: "text-orange-400", bg: "bg-orange-500/10" },
+    { label: "Белсенді уақыт", value: userData.activity.length > 0 ? String(userData.activity[userData.activity.length - 1].activeMinutes) : "48", unit: "мин", icon: Clock, color: "text-emerald-400", bg: "bg-emerald-500/10" },
+  ];
 
   return (
     <motion.div
@@ -74,10 +58,21 @@ export default function ActivityChart() {
           </div>
           <div>
             <h2 className="text-lg font-semibold text-white">Белсенділік аналитикасы</h2>
-            <p className="text-sm text-white/50">Соңғы 7 күн</p>
+            <p className="text-sm text-white/50">
+              {hasUserData ? "Сіздің нақты деректеріңіз" : "Соңғы 7 күн"}
+            </p>
           </div>
         </div>
       </div>
+
+      {hasUserData && (
+        <div className="mb-4 flex items-center gap-2 px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs text-emerald-400">
+            {userData.activity.length} жеке жазба қосылды
+          </span>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-3 mb-6">
         {stats.map((stat, i) => {
@@ -105,38 +100,28 @@ export default function ActivityChart() {
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm text-white/60">Күнделікті қадам мақсаты</span>
           <span className="text-sm font-medium text-emerald-400">
-            {healthSummary.avgSteps.toLocaleString()} / {goal.toLocaleString()}
+            {latestStats.steps.toLocaleString()} / {goal.toLocaleString()}
           </span>
         </div>
         <div className="h-2 rounded-full bg-white/5 overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
             initial={{ width: 0 }}
-            animate={{ width: `${Math.min(100, (healthSummary.avgSteps / goal) * 100)}%` }}
-            transition={{ delay: 0.5, duration: 1 }}
+            animate={{ width: `${Math.min(100, (latestStats.steps / goal) * 100)}%` }}
+            transition={{ duration: 0.8 }}
           />
         </div>
       </div>
 
       <div className="h-48">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={last7DaysActivity} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+          <BarChart data={last7} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis
-              dataKey="day"
-              tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
-            />
+            <XAxis dataKey="day" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} tickLine={false} axisLine={false} />
+            <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
             <Tooltip content={<CustomTooltip />} />
             <Bar dataKey="steps" name="Қадам" radius={[4, 4, 0, 0]} maxBarSize={40}>
-              {last7DaysActivity.map((entry, index) => (
+              {last7.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
                   fill={entry.steps >= goal ? "#10b981" : entry.steps >= 7000 ? "#3b82f6" : "#6366f1"}
@@ -152,28 +137,12 @@ export default function ActivityChart() {
         <h3 className="text-sm text-white/60 mb-3">Жанған калориялар</h3>
         <div className="h-32">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={last7DaysActivity} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+            <BarChart data={last7} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-              <XAxis
-                dataKey="day"
-                tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-              />
+              <XAxis dataKey="day" tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fill: "rgba(255,255,255,0.4)", fontSize: 10 }} tickLine={false} axisLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Bar
-                dataKey="calories"
-                name="Калория"
-                radius={[4, 4, 0, 0]}
-                fill="#f97316"
-                fillOpacity={0.7}
-                maxBarSize={40}
-              />
+              <Bar dataKey="calories" name="Калория" radius={[4, 4, 0, 0]} fill="#f97316" fillOpacity={0.7} maxBarSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>
