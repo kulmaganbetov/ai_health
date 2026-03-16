@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Логин мен парольді енгізіңіз" }, { status: 400 });
     }
 
-    const user = findByUsername(username);
+    const user = await findByUsername(username);
     if (!user) {
       return NextResponse.json({ error: "Логин немесе пароль қате" }, { status: 401 });
     }
@@ -34,7 +34,8 @@ export async function POST(request: Request) {
       path: "/",
     });
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[login]", err);
     return NextResponse.json({ error: "Сервер қатесі" }, { status: 500 });
   }
 }

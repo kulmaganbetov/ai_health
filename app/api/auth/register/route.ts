@@ -19,7 +19,7 @@ export async function POST(request: Request) {
     if (password.length < 6) {
       return NextResponse.json({ error: "Пароль кемінде 6 символ болуы керек" }, { status: 400 });
     }
-    if (usernameExists(username)) {
+    if (await usernameExists(username)) {
       return NextResponse.json({ error: "Бұл логин бос емес, басқасын таңдаңыз" }, { status: 409 });
     }
 
@@ -40,7 +40,8 @@ export async function POST(request: Request) {
       path: "/",
     });
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[register]", err);
     return NextResponse.json({ error: "Сервер қатесі. Қайталап көріңіз." }, { status: 500 });
   }
 }
