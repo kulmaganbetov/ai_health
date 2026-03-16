@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Zap, Eye, EyeOff, Lock, User, AlertCircle, Heart } from "lucide-react";
+import { Zap, Eye, EyeOff, Lock, User, AlertCircle } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -82,16 +83,6 @@ export default function LoginPage() {
         >
           <h2 className="text-xl font-bold text-white mb-1">Жүйеге кіру</h2>
           <p className="text-white/40 text-sm mb-6">Жеке денсаулық деректеріңізге кіріңіз</p>
-
-          {/* Demo credentials hint */}
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 mb-6">
-            <Heart size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-blue-300">
-              <span className="font-semibold">Демо аккаунт:</span>
-              <br />
-              Логин: <code className="bg-blue-500/20 px-1 rounded">aibek</code> · Пароль: <code className="bg-blue-500/20 px-1 rounded">health2024</code>
-            </div>
-          </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Username */}
@@ -172,8 +163,11 @@ export default function LoginPage() {
           </form>
         </motion.div>
 
-        <p className="text-center text-xs text-white/20 mt-6">
-          Барлық деректер жергілікті деңгейде сақталады
+        <p className="text-center text-sm text-white/40 mt-6">
+          Аккаунт жоқ па?{" "}
+          <Link href="/register" className="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+            Тіркелу
+          </Link>
         </p>
       </div>
     </div>

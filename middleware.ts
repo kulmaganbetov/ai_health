@@ -11,7 +11,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname === "/login") {
+  if (pathname === "/login" || pathname === "/register") {
     if (token && token.value === "authenticated") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
@@ -21,5 +21,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/login"],
+  matcher: ["/dashboard/:path*", "/login", "/register"],
 };
